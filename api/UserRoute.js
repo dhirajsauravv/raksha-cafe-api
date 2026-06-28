@@ -1,11 +1,17 @@
 import express, { response, Router } from "express";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
 const router = express.Router();
 
 const users = [];
 
-router.post("/login", (req, res) => {
+async function hash(password) {
+  const saltRounds = Number(process.env.SALT_ROUNDS);
+  return await bcrypt.hash(password, saltRounds);
+}
+
+router.post("/login", async (req, res) => {
   try {
     const userData = req.body;
 
@@ -18,7 +24,7 @@ router.post("/login", (req, res) => {
       return res.status(401).send({ message: "User not Found." });
     }
 
-    if (userFound.password !== userData.password) {
+    if (!(await bcrypt.compare(userData.password, userFound.password))) {
       return res.status(401).send({ message: "Password incorrect." });
     }
 
@@ -29,7 +35,7 @@ router.post("/login", (req, res) => {
   }
 });
 
-router.post("/register", (req, res) => {
+router.post("/register", async (req, res) => {
   try {
     const userData = req.body;
 
@@ -37,12 +43,15 @@ router.post("/register", (req, res) => {
       return res.sendStatus(400);
     }
 
-    users.push({ email: userData.email, password: userData.password });
+    users.push({
+      email: userData.email,
+      password: await hash(userData.password),
+    });
 
     const token = jwt.sign({ email: userData.email }, process.env.PRIVATE_KEY);
     res.send({ token: token });
   } catch (error) {
-    res.status(500).send({ error: error });
+    res.status(500).send({ error: error.toString() });
   }
 });
 
