@@ -48,6 +48,13 @@ router.post("/register", async (req, res) => {
       return res.sendStatus(400);
     }
 
+    const userFound = await users.findOne({ email: userData.email }).exec();
+    if (userFound) {
+      return res
+        .status(401)
+        .send({ message: "This email is already registered." });
+    }
+
     const newUser = await users.insertOne({
       email: userData.email,
       password: await hash(userData.password),
