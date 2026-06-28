@@ -11,6 +11,10 @@ if (process.env.NODE_ENV === "dev") app.use(cors());
 const port = process.env.PORT || 5000;
 connectDB();
 
+app.use(express.json());
+
+app.use(express.urlencoded({ extended: true }));
+
 app.use("/api", api);
 
 app.get("/", (req, res) => res.send("Hello World!"));
